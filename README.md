@@ -1,6 +1,10 @@
 # factorio-planner
 Calculates recipes, quantities, machines, and raw inputs for a Factorio factory
 
+## Dependencies
+
+A LUA interpreter and a Python 3.x interpreter.
+
 ## Usage
 1) Use the get-data.sh script to get Factorio's base mod data from an 
 existing Factorio install, and convert it into JSON format:
@@ -26,3 +30,5 @@ possible, and to have 4 beacons affecting each assembler
 oil recipes to the prohibited list, which will convert oil products to raw 
 inputs.  (You will need to add them to the hardcoded stack-size list.  
 What is the stack size of a fluid, you ask?  2500.)
+
+* There is no user-interface yet
