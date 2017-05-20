@@ -74,7 +74,16 @@ class Recipe(object):
             item = Item.get_or_make_item(result['name'])
             self.results.append( (item,result['amount']) )
             item.made_by.append(self)
-        self.productivity_allowed = self.name in productivity_recipes
+        self.productivity_allowed = self.name in Module.productivity_recipes
+
+    all = {}
+        
+    @staticmethod
+    def load_json( recipes_json ):
+        for name in recipes_json:
+            recipe = Recipe( recipes_json[name] )
+            Recipe.all[recipe.name] = recipe
+    
 
     def __repr__(self):
         return "Recipe(%s)" % self.name
@@ -129,11 +138,14 @@ class Module(object):
 
     all={}
 
+    productivity_recipes = []
+
     @staticmethod
     def load_json(module_json):
         for name in module_json:
             module = Module(module_json[name])
             Module.all[module.name] = module
+        Module.productivity_recipes = module_json['productivity-module-3']['limitation']
 
 class Effects(object):
     def __init__(self):
@@ -159,18 +171,9 @@ def load_all_json(filename):
     recipes_json, items_json, module_json, machine_json = json.load(f)
     f.close()
 
-    global productivity_recipes
-    productivity_recipes = module_json['productivity-module-3']['limitation']
-    
-    global all_recipes
-    all_recipes = {}
-        
-    for name in recipes_json:
-        recipe = Recipe( recipes_json[name] )
-        all_recipes[recipe.name] = recipe
-    
-    Machine.load_json( machine_json )
     Module.load_json( module_json )
+    Recipe.load_json( recipes_json ) # Need productivity_recipes form Module
+    Machine.load_json( machine_json )
 
 def main(argv):
     load_all_json("data.json")
