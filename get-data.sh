@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SRC=${1:-../../factorio-0.15.9/data}
+SRC=${1:-../../factorio-0.15.12/data}
 DST=base/
 
 rm -rf ${DST}
