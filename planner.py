@@ -95,6 +95,45 @@ class Machine(object):
                     catlist[category] = []
                 catlist[category].append(machine)
 
+class Module(object):
+    def __init__(self,json):
+        self.name = json['name']
+        
+        def get_bonus(name):
+            effect = json['effect']
+            return effect[name]['bonus'] if name in effect else 0.0
+        
+        self.speed_bonus =   get_bonus('speed')
+        self.power_bonus =   get_bonus('consumption')
+        self.prod_bonus =    get_bonus('productivity')
+        self.pollute_bonus = get_bonus('pollution')
+
+    all={}
+
+    @staticmethod
+    def load_json(module_json):
+        for name in module_json:
+            module = Module(module_json[name])
+            Module.all[module.name] = module
+
+class Effects(object):
+    def __init__(self):
+        self.speed_mult = 1.0
+        self.power_mult = 1.0
+        self.prod_mult = 1.0
+        self.pollute_mult = 1.0
+    
+    def apply_module(self,module,qty):
+        self.speed_mult   += module.speed_bonus * qty
+        self.power_mult   += module.power_bonus * qty
+        self.prod_mult    += module.prod_bonus * qty
+        self.pollute_mult += module.pollute_bonus * qty
+        
+    def clip_mults(self):
+        self.speed_mult = max(0.2,self.speed_mult)
+        self.power_mult = max(0.2,self.power_mult)
+        # There are no negative effects for 
+        # pollution and productivity yet
         
 def load_all_json(filename):
     f = open(filename,"r")
@@ -112,6 +151,7 @@ def load_all_json(filename):
         all_recipes[recipe.name] = recipe
     
     Machine.load_json( machine_json )
+    Module.load_json( module_json )
 
 def main(argv):
     load_all_json("data.json")
@@ -202,40 +242,38 @@ def plan_science():
     for (iname,qty) in outputs:
         Item.all_items[iname].qty_req = qty * global_scalar
     
+    prod3_module = Module.all['productivity-module-3']
+    speed3_module = Module.all['speed-module-3']
+    
     for recipe in recipe_order:
         machine = Machine.best_for_category( recipe.category )
         if machine is None:
             print( "No machine for " + recipe.category )
             exit(1)
 
-        power_mult = 1.0
-        speed_mult = 1.0
-        prod_mult = 1.0
+        eff = Effects()
         if recipe.productivity_allowed:
-            prod_mult += machine.module_slots * 0.10
-            speed_mult -= machine.module_slots * 0.15
-            power_mult += machine.module_slots * 0.80
+            eff.apply_module( prod3_module, machine.module_slots )
         else:
-            speed_mult += 0.5 * machine.module_slots
-            power_mult += 0.7 * machine.module_slots
+            eff.apply_module( speed3_module, machine.module_slots )
             
         # assume 4 speed beacons per machine:
-        speed_mult += 0.5 * 4
-        power_mult += 0.7 * 4
+        eff.apply_module( speed3_module, 4 )
+
+        eff.clip_mults()
 
         batches_to_make = 0;
         for (result,qty_per_batch) in recipe.results:
             qty_to_make = result.qty_req + result.qty_dep
             batches_to_make = max(batches_to_make, qty_to_make / qty_per_batch )
-        batches_to_make /= prod_mult
+        batches_to_make /= eff.prod_mult
             
             
-        crafting_speed = machine.crafting_speed * speed_mult
+        crafting_speed = machine.crafting_speed * eff.speed_mult
         machines_needed = math.ceil( batches_to_make * recipe.work / crafting_speed )
             
         machine.number_needed += machines_needed
             
-        batches_to_make /= prod_mult
         for (item,qty_input) in recipe.ingredients:
             item.qty_dep += qty_input * batches_to_make
         
