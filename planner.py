@@ -3,7 +3,7 @@
 import json
 import sys
 import math
-    
+
 class Item(object):
     def __init__(self,name):
         self.name = name
@@ -16,7 +16,7 @@ class Item(object):
         for recipe in self.made_by:
             if recipe.name not in forbidden_recipes:
                 return recipe
-    
+
     stack_sizes = {
         'iron-ore':50,
         'copper-ore':50,
@@ -26,28 +26,28 @@ class Item(object):
         'crude-oil':2500,
         'steam':2500
     }
-    
+
     def stack_size(self):
-        # We aren't loading this from the JSON, but 
+        # We aren't loading this from the JSON, but
         # we only have two stack sizes we care about.
         #  Ores are 50, fluids are 2500 (10 barrels)
         if self.name in Item.stack_sizes:
             return Item.stack_sizes[self.name]
         print( "Don't know stack size for " + item.name )
         exit(1)
-    
+
     def __repr__(self):
         return "Item(%s)" % self.name
 
     all_items = {}
-                
+
     @staticmethod
     def get_or_make_item(name):
         if name not in Item.all_items:
             Item.all_items[name] = Item(name)
         return Item.all_items[name]
-    
-    
+
+
 class Recipe(object):
     def __init__(self,json_dict):
         self.name = json_dict['name']
@@ -77,13 +77,13 @@ class Recipe(object):
         self.productivity_allowed = self.name in Module.productivity_recipes
 
     all = {}
-        
+
     @staticmethod
     def load_json( recipes_json ):
         for name in recipes_json:
             recipe = Recipe( recipes_json[name] )
             Recipe.all[recipe.name] = recipe
-    
+
 
     def __repr__(self):
         return "Recipe(%s)" % self.name
@@ -91,7 +91,7 @@ class Recipe(object):
 class Machine(object):
     by_crafting_category = {}
     all = []
-    
+
     def __init__(self,json):
         self.name = json["name"]
         self.crafting_categories = json["crafting_categories"]
@@ -99,7 +99,7 @@ class Machine(object):
         self.crafting_speed = json["crafting_speed"]
         self.energy_source_type = json["energy_source"]["type"]
         self.number_needed = 0
-        
+
     @staticmethod
     def best_for_category(category):
         best = None
@@ -126,11 +126,11 @@ class Machine(object):
 class Module(object):
     def __init__(self,json):
         self.name = json['name']
-        
+
         def get_bonus(name):
             effect = json['effect']
             return effect[name]['bonus'] if name in effect else 0.0
-        
+
         self.speed_bonus =   get_bonus('speed')
         self.power_bonus =   get_bonus('consumption')
         self.prod_bonus =    get_bonus('productivity')
@@ -153,19 +153,19 @@ class Effects(object):
         self.power_mult = 1.0
         self.prod_mult = 1.0
         self.pollute_mult = 1.0
-    
+
     def apply_module(self,module,qty):
         self.speed_mult   += module.speed_bonus * qty
         self.power_mult   += module.power_bonus * qty
         self.prod_mult    += module.prod_bonus * qty
         self.pollute_mult += module.pollute_bonus * qty
-        
+
     def clip_mults(self):
         self.speed_mult = max(0.2,self.speed_mult)
         self.power_mult = max(0.2,self.power_mult)
-        # There are no negative effects for 
+        # There are no negative effects for
         # pollution and productivity yet
-        
+
 def load_all_json(filename):
     f = open(filename,"r")
     recipes_json, items_json, module_json, machine_json = json.load(f)
@@ -202,20 +202,20 @@ def plan_science():
         'solid-fuel-from-heavy-oil'])
 
     machine_abbreviations = {
-      "electric-furnace":     "FURN",
-      "chemical-plant":       "CHEM",
-      "assembling-machine-3": "ASM3",
-      "rocket-silo":          "SILO",
-      "oil-refinery":         "RFNR",
+    "electric-furnace":     "FURN",
+    "chemical-plant":       "CHEM",
+    "assembling-machine-3": "ASM3",
+    "rocket-silo":          "SILO",
+    "oil-refinery":         "RFNR",
     }
 
 
     X = [ Item.all_items[x[0]] for x in outputs ]
     D = []
-    
+
     recipes_used = set()
     raw_materials = set()
-    
+
     while len(X) > 0:
         item = X.pop(0)
         recipe = item.choose_recipe( forbidden_recipes )
@@ -229,12 +229,12 @@ def plan_science():
         else:
             raw_materials.add(item)
         D.append(item)
-        
+
     raw_materials = list(raw_materials)
     recipes_used = list(recipes_used)
 
     max_iter = 10000
-    
+
     recipe_order = []
     items_produced = set(raw_materials)
     while len(recipes_used) > 0:
@@ -259,13 +259,13 @@ def plan_science():
             items_produced.add(item)
 
     recipe_order.reverse()
-    
+
     for (iname,qty) in outputs:
         Item.all_items[iname].qty_req = qty * global_scalar
-    
+
     prod3_module = Module.all['productivity-module-3']
     speed3_module = Module.all['speed-module-3']
-    
+
     for recipe in recipe_order:
         machine = Machine.best_for_category( recipe.category )
         if machine is None:
@@ -277,7 +277,7 @@ def plan_science():
             eff.apply_module( prod3_module, machine.module_slots )
         else:
             eff.apply_module( speed3_module, machine.module_slots )
-            
+
         # assume 4 speed beacons per machine:
         eff.apply_module( speed3_module, 4 )
 
@@ -288,25 +288,25 @@ def plan_science():
             qty_to_make = result.qty_req + result.qty_dep
             batches_to_make = max(batches_to_make, qty_to_make / qty_per_batch )
         batches_to_make /= eff.prod_mult
-            
-            
+
+
         crafting_speed = machine.crafting_speed * eff.speed_mult
         machines_needed = math.ceil( batches_to_make * recipe.work / crafting_speed )
-            
+
         machine.number_needed += machines_needed
-            
+
         for (item,qty_input) in recipe.ingredients:
             item.qty_dep += qty_input * batches_to_make
-        
+
         ingred_names = [item.name for (item,qty) in recipe.ingredients]
         prod_mark = "***" if recipe.productivity_allowed else "   "
-        
+
         machine_name = machine.name
         machine_name = machine_abbreviations.get(machine_name,machine_name)
-        
-        print( "%s %8.2f/s %3d %s - %s" % (prod_mark, qty_to_make, machines_needed, 
-                                         machine_name, recipe.name) )
-                                                                        
+
+        print( "%s %8.2f/s %3d %s - %s" % (prod_mark, qty_to_make, machines_needed,
+                                        machine_name, recipe.name) )
+
     for item in raw_materials:
         stacks_per_min = 60 * item.qty_dep / item.stack_size()
         print( "RAW %8.2f/s (%6.2f stack/min) %s" % (item.qty_dep, stacks_per_min, item.name) )
