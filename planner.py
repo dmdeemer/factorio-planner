@@ -17,6 +17,25 @@ class Item(object):
             if recipe.name not in forbidden_recipes:
                 yield recipe
     
+    stack_sizes = {
+        'iron-ore':50,
+        'copper-ore':50,
+        'coal':50,
+        'stone':50,
+        'water':2500,
+        'crude-oil':2500,
+        'steam':2500
+    }
+    
+    def stack_size(self):
+        # We aren't loading this from the JSON, but 
+        # we only have two stack sizes we care about.
+        #  Ores are 50, fluids are 2500 (10 barrels)
+        if self.name in Item.stack_sizes:
+            return Item.stack_sizes[self.name]
+        print( "Don't know stack size for " + item.name )
+        exit(1)
+    
     def __repr__(self):
         return "Item(%s)" % self.name
 
@@ -283,11 +302,12 @@ def plan_science():
         machine_name = machine.name
         machine_name = machine_abbreviations.get(machine_name,machine_name)
         
-        print( "%s %8.2f %3d %s - %s" % (prod_mark, qty_to_make, machines_needed, 
+        print( "%s %8.2f/s %3d %s - %s" % (prod_mark, qty_to_make, machines_needed, 
                                          machine_name, recipe.name) )
                                                                         
     for item in raw_materials:
-        print( "RAW %8.2f %s" % (item.qty_dep, item.name) )
+        stacks_per_min = 60 * item.qty_dep / item.stack_size()
+        print( "RAW %8.2f/s (%6.2f stack/min) %s" % (item.qty_dep, stacks_per_min, item.name) )
 
     for machine in Machine.all:
         if machine.number_needed > 0:
