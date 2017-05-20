@@ -15,7 +15,7 @@ class Item(object):
     def choose_recipe(self,forbidden_recipes=set()):
         for recipe in self.made_by:
             if recipe.name not in forbidden_recipes:
-                yield recipe
+                return recipe
     
     stack_sizes = {
         'iron-ore':50,
@@ -215,16 +215,15 @@ def plan_science():
     
     while len(X) > 0:
         item = X.pop(0)
-        recipe_found = False
-        for recipe in item.choose_recipe( forbidden_recipes ):
+        recipe = item.choose_recipe( forbidden_recipes )
+        if recipe is not None:
             recipes_used.add(recipe)
-            recipe_found = True
             ingred_names = []
             for (ingred,qty) in recipe.ingredients:
                 if ingred not in D and ingred not in X:
                     X.append(ingred)
                 ingred_names.append(ingred.name)
-        if not recipe_found:
+        else:
             raw_materials.add(item)
         D.append(item)
         
