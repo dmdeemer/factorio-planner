@@ -1,15 +1,7 @@
 diff -U10 base.orig/data.lua base/data.lua
 --- base.orig/data.lua	2017-05-13 21:06:52.419893412 -0400
 +++ base/data.lua	2017-05-13 21:13:48.761627830 -0400
-@@ -19,22 +19,22 @@
- require("prototypes.item.demo-mining-tools")
- require("prototypes.item.demo-turret")
- require("prototypes.item.demo-item-groups")
- require("prototypes.recipe.demo-furnace-recipe")
- require("prototypes.recipe.demo-recipe")
- require("prototypes.recipe.demo-turret")
- require("prototypes.fluid.demo-fluid")
- require("prototypes.signal.demo-signal")
+@@ -26,6 +26,6 @@
  require("prototypes.tile.noise-layers")
  require("prototypes.autoplace-controls")
 -require("prototypes.map-settings")
@@ -18,14 +10,6 @@ diff -U10 base.orig/data.lua base/data.lua
 +--require("prototypes.map-gen-presets")
  require("prototypes.tile.tiles")
  require("prototypes.decorative.decoratives")
- require("prototypes.damage-type")
- require("prototypes.categories.ammo-category")
- require("prototypes.categories.rail-category")
- require("prototypes.categories.fuel-category")
- require("prototypes.categories.recipe-category")
- require("prototypes.categories.resource-category")
- require("prototypes.categories.module-category")
- require("prototypes.equipment-grid")
 Common subdirectories: base.orig/locale and base/locale
 Common subdirectories: base.orig/migrations and base/migrations
 Common subdirectories: base.orig/prototypes and base/prototypes
