@@ -99,11 +99,12 @@ class Recipe(object):
         self.effects = Effects()
         if self.productivity_allowed:
             self.effects.apply_module( prod3_module, self.machine.module_slots )
-        else:
-            self.effects.apply_module( speed3_module, self.machine.module_slots )
+        #else:
+        #    self.effects.apply_module( speed3_module, self.machine.module_slots )
 
         # assume 4 speed beacons per machine:
-        self.effects.apply_module( speed3_module, 4 )
+        num_beacons = 8 if (self.category == 'smelting') else 4
+        self.effects.apply_module( speed3_module, num_beacons )
 
         self.effects.clip_mults()
 
@@ -334,7 +335,8 @@ def load_all_json(filename):
         if machine.name in machine_abbreviations:
             machine.abbreviation = machine_abbreviations[machine.name]
             
-    oil_recipes = [Recipe.all[x] for x in ( 'advanced-oil-processing',
+    oil_recipes = [Recipe.all[x] for x in ( #'advanced-oil-processing',
+                                            'coal-liquefaction',
                                             'heavy-oil-cracking',
                                             'light-oil-cracking' ) ]
     OilProduction = CompoundRecipe( 'compound-oil-production', oil_recipes )
