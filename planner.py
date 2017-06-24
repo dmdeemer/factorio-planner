@@ -392,10 +392,13 @@ def plan_science():
         D.append(item)
 
     raw_materials = list(raw_materials)
-    recipes_used = list(recipes_used)
+    sort_key = lambda r: r.name
+    recipes_used = sorted(recipes_used, key=sort_key)
 
     max_iter = 10000
 
+    # Determine recipe order: Add a recipe to rhe order if it's product(s) are
+    #   already in the order
     recipe_order = []
     items_produced = set(raw_materials)
     while len(recipes_used) > 0:
