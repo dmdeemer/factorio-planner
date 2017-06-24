@@ -80,14 +80,14 @@ class Recipe(object):
             item.made_by.append(self)
         self.productivity_allowed = self.name in Module.productivity_recipes
         self.prepared = False
-        
+
     all = {}
 
     def prepare(self):
         if self.prepared:
             return
         self.prepared = True
-        
+
         self.machine = Machine.best_for_category( self.category )
         if self.machine is None:
             print( "No machine for " + self.category )
@@ -113,9 +113,9 @@ class Recipe(object):
         if( len(self.results) > 1 ):
             print( "Error, recipes with more than one result should be CompoundRecipes" )
             exit(1)
-            
+
         self.prepare()
-        
+
         (result,qty_per_batch) = self.results[0]
         qty_to_make = result.qty_req + result.qty_dep
         batches_to_make = qty_to_make / (qty_per_batch * self.effects.prod_mult)
@@ -139,7 +139,7 @@ class Recipe(object):
 
         print( "%s (%8.2f) %3d %s - %s" % (prod_mark, machines_needed_1x, machines_needed,
                                         machine_name, self.name) )
-    
+
     @staticmethod
     def load_json( recipes_json ):
         for name in recipes_json:
@@ -161,15 +161,15 @@ class CompoundRecipe(Recipe):
             self.inputs.update( {item for (item,qty) in recipe.ingredients} )
             self.outputs.update( {item for (item,qty) in recipe.results} )
         self.inputs -= self.outputs
-        
+
         for item in self.inputs:
             item.used_in.append(self)
         for item in self.outputs:
             item.made_by.append(self)
-        
+
         self.ingredients = [(item,0) for item in self.inputs]
         self.results = [(item,0) for item in self.outputs]
-    
+
     def compute(self):
         idx = 0
         item_map = {}
@@ -183,16 +183,16 @@ class CompoundRecipe(Recipe):
                 if item.name not in item_map:
                     item_map[item.name] = idx
                     idx+=1
-        
+
         N = len(self.inputs) + len(self.recipes)
         if N != idx:
             print( "Error: CompoundRecipe %s is %sconstrained" % (self.name, "under" if N < idx else "over") )
             print( idx )
             print( self.inputs )
             print( self.recipes )
-            
+
             exit(1)
-            
+
         # Linear equation is M*x = b
         #   M is recipes (and pseudo-recipes for inputs)
         #   x is number of batches of each recipe
@@ -207,7 +207,7 @@ class CompoundRecipe(Recipe):
             M[item_map[item.name],idx] = 1
             results.append(item)
             idx += 1
-            
+
         for recipe in self.recipes:
             for (item,qty) in recipe.ingredients:
                 row = item_map[item.name]
@@ -217,23 +217,23 @@ class CompoundRecipe(Recipe):
                 M[row,idx] += qty * recipe.effects.prod_mult
             results.append(recipe)
             idx += 1
-                
+
         for item in self.outputs:
             row = item_map[item.name]
             b[row,0] = item.qty_req + item.qty_dep
-        
+
         x = M**-1 * b
-        
+
         for (idx,result) in enumerate(results):
             if type(result) is Item:
                 result.qty_dep += x[idx]
             if type(result) is Recipe:
                 batches_to_make = x[idx]
-                    
+
                 (machines_needed, machines_needed_1x) = result.calc_machines_needed(batches_to_make)
                 result.show(machines_needed, machines_needed_1x)
                 result.machine.number_needed += machines_needed
-                
+
 
 
 class Machine(object):
@@ -330,11 +330,11 @@ def load_all_json(filename):
     "rocket-silo":          "SILO",
     "oil-refinery":         "RFNR",
     }
-    
+
     for machine in Machine.all:
         if machine.name in machine_abbreviations:
             machine.abbreviation = machine_abbreviations[machine.name]
-            
+
     oil_recipes = [Recipe.all[x] for x in ( #'advanced-oil-processing',
                                             'coal-liquefaction',
                                             'heavy-oil-cracking',
